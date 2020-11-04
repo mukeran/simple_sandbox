@@ -5,13 +5,8 @@ import logging
 
 
 class BaseFilter(metaclass=abc.ABCMeta):
-  def __init__(self, filename: str):
-    with open(os.path.join("./filters", filename), "r")as f:
-      tmp = json.load(f)
-      self.patterns = tmp["patterns"]
-
   @abc.abstractmethod
-  def judge(self, path, payload):
+  def judge(self, type, data):
     pass
 
   @staticmethod

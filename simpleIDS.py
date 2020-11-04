@@ -1,36 +1,28 @@
 import logging
-
+import engines
 import filters, decoder
-import utils
-import termcolor
 
-
-def main():
+def start():
   logging.basicConfig(level=logging.DEBUG)
-  sniffer = utils.HTTPSniffer(iface="lo0")
-  logging.debug("start to register decoder")
+  sniffer = engines.HTTPSniffer('lo0')
+  watcher = engines.FileWatcher(['./test'])
+  logging.debug("Start to register decoder...")
   sniffer.register_decoder(decoder.UrlDecoder)
   sniffer.register_decoder(decoder.Base64Decoder)
-  logging.debug("start to register filters")
+  logging.debug("Start to register filters...")
   sniffer.register_filter(filters.SqliFilter())
   sniffer.register_filter(filters.XSSFilter())
   sniffer.register_filter(filters.WebshellFilter())
   sniffer.register_filter(filters.BinaryFilter())
+  watcher.register_filter(filters.WebshellFilter())
+  watcher.register_filter(filters.BinaryFilter())
 
-  logging.debug("initialized")
+  logging.info("Initialized")
   sniffer.start()
-
-
-def test():
-  import urllib.parse
-  p = urllib.parse.urlparse(b"http://abc.com/?id=123123123")
-  print(p)
+  watcher.start()
+  sniffer.join()
+  watcher.join()
 
 
 if __name__ == '__main__':
-  # test()
-  # text=termcolor.colored("hallo", "blue")
-  # print(text)
-  main()
-
-  # test_sniff()
+  start()

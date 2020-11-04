@@ -10,5 +10,15 @@
       "msg": "Potential PHP command execution",
       "pattern": "/<\\%3F(.*)(system|eval|exec|pnctl|pthread|popen)/i"
     }
+  ],
+  "languages": [
+    {
+      "lang": "php",
+      "pattern": "<(?P<tag>\\?|%)(php|=)?\\s+(?P<code>.*?)\\s+((?P=tag)>|$)"
+    },
+    {
+      "lang": "php",
+      "pattern": "<script\\s+language=\"?php\"?>(?P<code>.*?)<\\/script>"
+    }
   ]
 }

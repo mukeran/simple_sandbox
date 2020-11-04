@@ -1,13 +1,11 @@
-from typing import Optional
-from urllib.parse import ParseResultBytes
-
-from scapy.all import sniff
-from scapy.layers.http import HTTPRequest, HTTPResponse
-import filters
 import threading
 import logging
 import decoder as d
+from scapy.all import sniff
+from scapy.layers.http import HTTPRequest
 
+from filters.meta import BaseFilter
+from engines.meta import Engine
 
 class HTTPSniffer:
   def __init__(self, iface="eth0"):
@@ -16,14 +14,16 @@ class HTTPSniffer:
     self.decoders = []
 
   def start(self):
-    t = threading.Thread(
+    self.t = threading.Thread(
       target=sniff,
       kwargs={"iface": self.iface, "prn": self.parse, "filter": "tcp"}
     )
-    t.start()
-    t.join()
+    self.t.start()
+  
+  def join(self):
+    self.t.join()
 
-  def register_filter(self, payload_filter: filters.BaseFilter):
+  def register_filter(self, payload_filter: BaseFilter):
     """
     用于注册一个过滤器
 
@@ -47,13 +47,13 @@ class HTTPSniffer:
       return
     content = pkt.getlayer(HTTPRequest)
     raw_path = content.Path
-    raw_payload = bytes(content.payload)
+    raw_body = bytes(content.payload)
     # print(raw_payload)
     path = self.recurse_decode(raw_path)
-    payload = self.recurse_decode(raw_payload)
+    body = self.recurse_decode(raw_body)
     for f in self.filters:
-      f: filters.BaseFilter
-      f.judge(path, payload)
+      f: BaseFilter
+      f.judge(Engine.HTTP, { 'path': path, 'body': body })
 
   # noinspection PyBroadException
   def recurse_decode(self, data: bytes):

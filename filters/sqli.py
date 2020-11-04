@@ -1,24 +1,31 @@
-import abc
-import logging
+import os
+import json
 import re
-from filters.meta import BaseFilter
 
+from filters.meta import BaseFilter
+from engines.meta import Engine
 
 class SqliFilter(BaseFilter):
   def __init__(self):
-    BaseFilter.__init__(self, "sqli.json")
+    with open(os.path.join("./filters/datasets", "sqli.json"), "r") as f:
+      tmp = json.load(f)
+      self.patterns = tmp["patterns"]
     for p in self.patterns:
-      # print(p["pattern"])
       p["pattern"] = re.compile(p["pattern"].encode())
 
-  def judge(self, path, payload):
-    # check path
-    for p in self.patterns:
-      pattern: re.Pattern = p["pattern"]
-      if pattern.findall(path):
-        self.report(path, "query")
-      if pattern.findall(payload):
-        self.report(payload, "body")
+  def judge(self, type: Engine, data: dict):
+    if type == Engine.HTTP:
+      path = data['path']
+      body = data['body']
+      # check path
+      for p in self.patterns:
+        pattern: re.Pattern = p["pattern"]
+        if pattern.findall(path):
+          self.report(path, "query")
+        if pattern.findall(body):
+          self.report(body, "body")
+    else:
+      pass
 
 # alert tcp any any -> any $HTTP_PORTS (msg:"SQL Injection - Paranoid";flow:to_server,established;pcre:"/(\%27)|(\')|(\-\-)|(%23)|(#)/i"; classtype:Web-application-attack; sid:909900;rev:5;)
 #
