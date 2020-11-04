@@ -1,2 +1,4 @@
+pathtools==0.1.2
 scapy==2.4.4
 termcolor==1.1.0
+watchdog==0.10.3
