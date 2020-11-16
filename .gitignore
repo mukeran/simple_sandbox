@@ -4,3 +4,4 @@ nohup.out
 __pycache__
 .vscode
 test
+.DS_Store

@@ -2,26 +2,12 @@ import logging
 import os
 import json
 import re
-from enum import Enum
 from typing import Tuple
 
 from filters.meta import BaseFilter
 from engines.meta import Engine
-
-class WebshellLang(Enum):
-  PHP = 0
-  ASP = 1
-  JSP = 2
-
-  @staticmethod
-  def from_string(s: str):
-    if s.lower() == 'php':
-      return WebshellLang.PHP
-    elif s.lower() == 'asp':
-      return WebshellLang.ASP
-    elif s.lower() == 'jsp':
-      return WebshellLang.JSP
-    return None
+from .meta import WebshellLang
+from .checker import Checker
 
 class WebshellFilter(BaseFilter):
   def __init__(self):
@@ -53,10 +39,6 @@ class WebshellFilter(BaseFilter):
           parts.append((WebshellLang.from_string(lang['lang']), match.groupdict()['code']))
     return parts
 
-  @staticmethod
-  def judge_by_ast(lang: WebshellLang, content: bytes):
-    pass
-
   def judge(self, type: Engine, data: dict):
     if type == Engine.HTTP:
       path = data['path']
@@ -78,6 +60,6 @@ class WebshellFilter(BaseFilter):
         return
       for part in parts:
         part: Tuple[WebshellLang, bytes]
-        result = self.judge_by_ast(part[0], part[1])
+        result = Checker.check(part[0], part[1])
         if result:
           self.report(result, path)
