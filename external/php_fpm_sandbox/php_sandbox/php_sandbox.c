@@ -11,6 +11,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
+#include "util.h"
+
 /* For compatibility with older PHP versions */
 #ifndef ZEND_PARSE_PARAMETERS_NONE
 #define ZEND_PARSE_PARAMETERS_NONE() \
@@ -18,7 +20,11 @@
 	ZEND_PARSE_PARAMETERS_END()
 #endif
 
-void inform_detected() {
+#define hook_function_count 7
+char *hook_function_names[] = {"system", "exec", "passthru", "shell_exec", "pcntl_exec", "popen", "mail"};
+zif_handler original_functions[hook_function_count];
+
+void inform_detected(const char *info) {
     if (PG(auto_globals_jit)) {
         zend_is_auto_global_str(ZEND_STRL("_SERVER"));
     }
@@ -30,7 +36,7 @@ void inform_detected() {
     int listen_port = 9001;
     char *listen_port_env = getenv("PROXY_LISTEN_PORT");
     if (listen_port_env != NULL)
-        sscanf(listen_port, "%d", &listen_port);
+        sscanf(listen_port_env, "%d", &listen_port);
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in addr;
@@ -40,7 +46,9 @@ void inform_detected() {
     addr.sin_port = htons(listen_port);
     connect(sockfd, (struct sockaddr*)&addr, sizeof(addr));
     char content[1024];
-    sprintf(content, "GET /%s HTTP/1.1\r\n\r\n", request_id);
+    char *urlencoded_info = urlencode(info);
+    sprintf(content, "GET /%s?info=%s HTTP/1.1\r\n\r\n", request_id, urlencoded_info);
+    free(urlencoded_info);
     write(sockfd, content, strlen(content));
     close(sockfd);
 }
@@ -54,7 +62,9 @@ PHP_FUNCTION(hooked_system)
 	ZEND_PARSE_PARAMETERS_END();
 	char *command = Z_STRVAL(args[0]);
 	php_printf("BLOCKED system!");
-    inform_detected();
+    char buf[2048];
+    sprintf(buf, "system, command: %s", command);
+    inform_detected(buf);
 	RETURN_STRING("BLOCKED!")
 }
 
@@ -67,7 +77,9 @@ PHP_FUNCTION(hooked_exec)
 	ZEND_PARSE_PARAMETERS_END();
 	char *command = Z_STRVAL(args[0]);
 	php_printf("BLOCKED exec!");
-    inform_detected();
+    char buf[2048];
+    sprintf(buf, "exec, command: %s", command);
+    inform_detected(buf);
 	RETURN_STRING("BLOCKED!")
 }
 
@@ -80,7 +92,9 @@ PHP_FUNCTION(hooked_passthru)
 	ZEND_PARSE_PARAMETERS_END();
 	char *command = Z_STRVAL(args[0]);
 	php_printf("BLOCKED passthru!");
-    inform_detected();
+    char buf[2048];
+    sprintf(buf, "passthru, command: %s", command);
+    inform_detected(buf);
 	RETURN_STRING("BLOCKED!")
 }
 
@@ -93,7 +107,9 @@ PHP_FUNCTION(hooked_shell_exec)
 	ZEND_PARSE_PARAMETERS_END();
 	char *command = Z_STRVAL(args[0]);
 	php_printf("BLOCKED shell_exec!");
-    inform_detected();
+    char buf[2048];
+    sprintf(buf, "shell_exec, command: %s", command);
+    inform_detected(buf);
 	RETURN_STRING("BLOCKED!")
 }
 
@@ -106,7 +122,9 @@ PHP_FUNCTION(hooked_pcntl_exec)
 	ZEND_PARSE_PARAMETERS_END();
 	char *command = Z_STRVAL(args[0]);
 	php_printf("BLOCKED pcntl_exec!");
-    inform_detected();
+    char buf[2048];
+    sprintf(buf, "pcntl_exec, command: %s", command);
+    inform_detected(buf);
 	RETURN_STRING("BLOCKED!")
 }
 
@@ -119,9 +137,30 @@ PHP_FUNCTION(hooked_popen)
 	ZEND_PARSE_PARAMETERS_END();
 	char *command = Z_STRVAL(args[0]);
 	php_printf("BLOCKED popen!");
-    inform_detected();
+    char buf[2048];
+    sprintf(buf, "popen, command: %s", command);
+    inform_detected(buf);
 	RETURN_STRING("BLOCKED!")
 }
+
+PHP_FUNCTION(hooked_mail)
+{
+    zval *args = NULL;
+	int argc = ZEND_NUM_ARGS();
+	ZEND_PARSE_PARAMETERS_START(1, -1)
+		Z_PARAM_VARIADIC('+', args, argc)
+	ZEND_PARSE_PARAMETERS_END();
+    if (argc >= 4) {
+        char buf[2048];
+        sprintf(buf, "mail, argc >= 4");
+        inform_detected(buf);
+	    RETURN_STRING("BLOCKED!")
+    } else {
+        original_functions[6](execute_data, return_value);
+    }
+}
+
+zif_handler hook_functions[] = {zif_hooked_system, zif_hooked_exec, zif_hooked_passthru, zif_hooked_shell_exec, zif_hooked_pcntl_exec, zif_hooked_popen, zif_hooked_mail};
 
 /* {{{ PHP_RINIT_FUNCTION
  */
@@ -144,11 +183,6 @@ PHP_MINFO_FUNCTION(php_sandbox)
 	php_info_print_table_end();
 }
 /* }}} */
-
-#define hook_function_count 6
-char *hook_function_names[] = {"system", "exec", "passthru", "shell_exec", "pcntl_exec", "popen"};
-zif_handler original_functions[hook_function_count];
-zif_handler hook_functions[] = {zif_hooked_system, zif_hooked_exec, zif_hooked_passthru, zif_hooked_shell_exec, zif_hooked_pcntl_exec, zif_hooked_popen};
 
 PHP_MINIT_FUNCTION(php_sandbox)
 {

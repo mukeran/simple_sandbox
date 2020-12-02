@@ -8,6 +8,7 @@ import random
 import string
 from enum import IntEnum
 from flask.json import jsonify
+import base64
 
 from werkzeug.utils import secure_filename
 
@@ -21,6 +22,7 @@ class status(IntEnum):
 
 app = Flask(NAME)
 results = {}
+info = {}
 
 @app.route('/', methods=['post'])
 def new_execution():
@@ -36,15 +38,17 @@ def new_execution():
   params['DOCUMENT_ROOT'] = save_path
   params['REQUEST_ID'] = request_id
   results[request_id] = status.PENDING
+  info[request_id] = ''
   execute(params, stdin)
   detected = False
   if results[request_id] == status.DETECTED:
     detected = True
-  return jsonify({ 'detected': detected })
+  return jsonify({ 'detected': detected, 'info': base64.b64encode(info[request_id].encode()) })
 
 @app.route('/<request_id>', methods=['get'])
 def detected(request_id):
   results[request_id] = status.DETECTED
+  info[request_id] = request.args.get('info')
   return jsonify({ 'success': True })
 
 class _fcgi_request_type(IntEnum):

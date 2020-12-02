@@ -7,6 +7,7 @@ from enum import Enum
 import json
 from scapy.all import sniff, TCP
 import docker
+import base64
 
 from decoder import FastCGIDecoder
 
@@ -74,5 +75,6 @@ class FPMSniffer:
         }, files={
           'script': open(params['SCRIPT_FILENAME'], 'rb')
         })
-        if r.json()['detected']:
-          logging.info('Detected PHP Execution in file {}'.format(params['SCRIPT_FILENAME']))
+        result = r.json()
+        if result['detected']:
+          logging.info('Detected PHP Execution in file {}, info: {}'.format(params['SCRIPT_FILENAME'], base64.b64decode(result['info'].encode())))

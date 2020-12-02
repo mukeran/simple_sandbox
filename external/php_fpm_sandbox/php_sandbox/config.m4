@@ -90,5 +90,5 @@ if test "$PHP_PHP_SANDBOX" != "no"; then
   dnl In case of no dependencies
   AC_DEFINE(HAVE_PHP_SANDBOX, 1, [ Have php_sandbox support ])
 
-  PHP_NEW_EXTENSION(php_sandbox, php_sandbox.c, $ext_shared)
+  PHP_NEW_EXTENSION(php_sandbox, util.c php_sandbox.c, $ext_shared)
 fi
