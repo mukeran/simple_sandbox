@@ -32,7 +32,15 @@ char *debug_container_execv_args[] = {
     NULL
 };
 
+void seg_fault () {
+    puts("Error! seg fault.");
+    kill(-1, SIGTERM);
+    kill(-1, SIGKILL);
+    exit(10);
+}
+
 int container_main(void *run_as) {
+    signal(SIGSEGV, seg_fault);
     printf("Container PID: %d\n", getpid());
     /** Remount / to private mode (IMPORTANT) */
     if (mount("none", "/", NULL, MS_REC | MS_PRIVATE, NULL) != 0) {
@@ -61,21 +69,6 @@ int container_main(void *run_as) {
     /** Set env */
     setenv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", 1);
 
-    /** Change user */
-    if (run_as != NULL) {
-        struct passwd *pw;
-        if ((pw = getpwnam((char*)run_as)) == NULL) {
-            fprintf(stderr, "No such user %s", (char*)run_as);
-            return -1;
-        }
-        if (setgid(pw->pw_gid) != 0) {
-            fprintf(stderr, "Failed to setgid to %d", pw->pw_gid);
-        }
-        if (setuid(pw->pw_uid) != 0) {
-            fprintf(stderr, "Failed to setuid to %d", pw->pw_uid);
-        }
-    }
-
     /** Setup ptrace */
     pid_t pid = fork();
     pid_t pid_agent;
@@ -84,12 +77,29 @@ int container_main(void *run_as) {
         fprintf(stderr, "Failed to fork");
         break;
     case 0:
+        /** Change user */
+        if (run_as != NULL) {
+            struct passwd *pw;
+            if ((pw = getpwnam((char*)run_as)) == NULL) {
+                fprintf(stderr, "No such user %s\n", (char*)run_as);
+                return -1;
+            }
+            if (setgid(pw->pw_gid) != 0) {
+                fprintf(stderr, "Failed to setgid to %d\n", pw->pw_gid);
+            }
+            if (setuid(pw->pw_uid) != 0) {
+                fprintf(stderr, "Failed to setuid to %d\n", pw->pw_uid);
+            }
+        }
         setup_trace();
         /** Execute target */
         execv(container_execv_args[0], container_execv_args);
     default:
+        // sleep(1);
         pid_agent = fork();
         switch (pid_agent) {
+        case -1:
+            fprintf(stderr, "Failed to fork");
         case 0:
             agent_loop(pid);
             break;
@@ -171,19 +181,18 @@ int main(int argc, char *argv[]) {
     else
         path_join(path, 2, "./rootfs", dirname(dup_program));
     mkdir_recursively(path, S_IRWXU | S_IRWXG | S_IRWXO);
+    free(dup_program);
     /** Set cwd */
     char *value = getenv("SANDBOX_CWD");
     if (value == NULL) {
-        int len = strlen(dup_program);
-        container_cwd = malloc(sizeof(char) * (len + 1));
-        memcpy(container_cwd, dup_program, sizeof(char) * (len + 1));
+        container_cwd = malloc(sizeof(char) * PATH_MAX);
+        getcwd(container_cwd, PATH_MAX);
     } else {
         int len = strlen(value);
         container_cwd = malloc(sizeof(char) * (len + 1));
         memcpy(container_cwd, value, sizeof(char) * (len + 1));
         free(value);
     }
-    free(dup_program);
     /** Copy program and its dependency */
     dup_program = strdup(argv[1]);
     path_join(path, 2, path, basename(dup_program));

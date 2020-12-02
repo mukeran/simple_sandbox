@@ -11,5 +11,7 @@ int is_directory_empty(const char *dirname);
 int trim(char *str);
 void mkdir_recursively(const char *dir, mode_t mode);
 int is_numeric(const char *str);
+int starts_with(const char *a, const char *b);
+char* read_link_path(const char* path);
 
 #endif
