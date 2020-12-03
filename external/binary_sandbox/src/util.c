@@ -112,3 +112,39 @@ int is_numeric(const char *str) {
     }
     return 1;
 }
+
+int starts_with(const char *a, const char *b)
+{
+   if(strncmp(a, b, strlen(b)) == 0) return 1;
+   return 0;
+}
+
+char* read_link_path(const char* path)
+{
+    struct stat sb;
+    char *linkname;
+    ssize_t r;
+
+    if (lstat(path, &sb) == -1) {
+        fprintf(stderr, "lstat failed.\n");
+    }
+
+   linkname = malloc(sb.st_size + 1);
+    if (linkname == NULL) {
+        fprintf(stderr, "insufficient memory.\n");
+    }
+
+   r = readlink(path, linkname, sb.st_size + 1);
+
+   if (r < 0) {
+        fprintf(stderr, "readlink failed.\n");
+    }
+
+   if (r > sb.st_size) {
+        fprintf(stderr, "symlink increased in size "
+                        "between lstat() and readlink()\n");
+    }
+
+   linkname[sb.st_size] = '\0';
+   return linkname;
+}

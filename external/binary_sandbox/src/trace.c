@@ -49,6 +49,10 @@ char *get_mem_str(pid_t pid, uint64_t addr) {
     char buf[PATH_MAX];
     sprintf(buf, "/proc/%d/mem", pid);
     FILE *fp = fopen(buf, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "Open %s failed.\n", buf);
+        return "";
+    }
     fseek(fp, addr, SEEK_SET);
     int i = 0;
     while (1) {
@@ -100,6 +104,34 @@ void on_syscall(pid_t pid, int type) {
             flags = info.arg2;
             mode = info.arg3;
             printf("Syscall open pathname: %s, flags: %lu, mode: %lu\n", pathname, flags, mode);
+
+            /* check for open passwd */
+            if (strcmp(pathname, "/etc/passwd") == 0) {
+                printf("{\"type\": \"detected access to /etc/passwd\", \"extra\": \"open %s\"}", pathname);
+                regs.orig_rax = -1;
+                set_registers(pid, &regs);
+                kill(-pid, SIGTERM);
+                kill(-pid, SIGKILL);
+                exit(10);
+            }
+            /* check for access crontab */
+            if (strcmp(pathname, "/etc/crontab") == 0) {
+                printf("{\"type\": \"detected access to /etc/crontab\", \"extra\": \"open %s\"}", pathname);
+                regs.orig_rax = -1;
+                set_registers(pid, &regs);
+                kill(-pid, SIGTERM);
+                kill(-pid, SIGKILL);
+                exit(10);
+            }
+            if (starts_with(pathname, "/etc/cron.d/")) {
+                printf("{\"type\": \"detected access to file under /etc/cron.d/\", \"extra\": \"open %s\"}", pathname);
+                regs.orig_rax = -1;
+                set_registers(pid, &regs);
+                kill(-pid, SIGTERM);
+                kill(-pid, SIGKILL);
+                exit(10);
+            }
+
             free(pathname);
             break;
         case SYS_openat:
@@ -111,6 +143,34 @@ void on_syscall(pid_t pid, int type) {
             if (fd == AT_FDCWD)
                 printf(", fd is cwd");
             putchar('\n');
+
+            /* check for open passwd */
+            if (strcmp(pathname, "/etc/passwd") == 0) {
+                printf("{\"type\": \"detected access to /etc/passwd\", \"extra\": \"openat %s\"}", pathname);
+                regs.orig_rax = -1;
+                set_registers(pid, &regs);
+                kill(-pid, SIGTERM);
+                kill(-pid, SIGKILL);
+                exit(10);
+            }
+            /* check for access crontab */
+            if (strcmp(pathname, "/etc/crontab") == 0) {
+                printf("{\"type\": \"detected access to /etc/crontab\", \"extra\": \"openat %s\"}", pathname);
+                regs.orig_rax = -1;
+                set_registers(pid, &regs);
+                kill(-pid, SIGTERM);
+                kill(-pid, SIGKILL);
+                exit(10);
+            }
+            if (starts_with(pathname, "/etc/cron.d/")) {
+                printf("{\"type\": \"detected access to file under /etc/cron.d/\", \"extra\": \"openat %s\"}", pathname);
+                regs.orig_rax = -1;
+                set_registers(pid, &regs);
+                kill(-pid, SIGTERM);
+                kill(-pid, SIGKILL);
+                exit(10);
+            }
+
             free(pathname);
             break;
         }
@@ -158,20 +218,50 @@ void trace_loop() {
     }
 }
 
+static char* agent_file_check(DIR* dir, char* pid) {
+    struct dirent *ent;
+    char buf[PATH_MAX];
+    while (1)
+    {
+        ent = readdir(dir);
+        char* target;
+        if (ent == NULL)
+            break;
+        if (is_numeric(ent->d_name)) {
+            sprintf(buf, "/proc/%s/fd/%s", pid, ent->d_name);
+            target = read_link_path(buf);
+            // printf("%s -> %s\n", buf, target);
+            /* check for open passwd */
+            if (strcmp(target, "/etc/passwd") == 0) {
+                return target;
+            }
+            /* check for access crontab */
+            if (strcmp(target, "/etc/crontab") == 0) {
+                return target;
+            }
+            if (starts_with(target, "/etc/cron.d/")) {
+                return target;
+            }
+            free(target);
+        }
+    }
+    return NULL;
+}
+
 void agent_loop(pid_t pid) {
     char buf[PATH_MAX];
     while (1) {
         DIR *dir;
         struct dirent *ent;
         dir = opendir("/proc");
-        int cnt = 0;
+        int proc_count = 0;
         if (dir != NULL) {
             while (1) {
                 ent = readdir(dir);
                 if (ent == NULL)
                     break;
                 if (is_numeric(ent->d_name)) {
-                    ++cnt;
+                    proc_count++;
                     sprintf(buf, "/proc/%s/cmdline", ent->d_name);
                     FILE *fp = fopen(buf, "r");
                     fgets(buf, PATH_MAX - 1, fp);
@@ -182,12 +272,29 @@ void agent_loop(pid_t pid) {
                         kill(-1, SIGKILL);
                         exit(10);
                     }
+
+                    /* check for suspicious file opens */
+                    sprintf(buf, "/proc/%s/fd", ent->d_name);
+                    DIR *dir_fd = opendir(buf);
+                    if (dir_fd != NULL) {
+                        char* fd_path;
+                        fd_path = agent_file_check(dir_fd, ent->d_name);
+                        if (fd_path != NULL) {
+                            printf("{\"type\": \"detected access to sensitive file\", \"extra\": \"fd opened for %s\"}", fd_path);
+                            free(fd_path);
+                            kill(-1, SIGTERM);
+                            kill(-1, SIGKILL);
+                            exit(10);
+                        }
+                    }
+                    closedir(dir_fd);
                 }
             }
         }
         closedir(dir);
-        if (cnt <= 2)
+        if (proc_count <= 2) {
             break;
+        }
         usleep(1000 * 200);
     }
 }
