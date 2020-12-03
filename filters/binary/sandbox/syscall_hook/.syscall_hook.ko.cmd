@@ -1,1 +1,0 @@
-cmd_/root/simpleIDS/filters/binary/sandbox/syscall_hook/syscall_hook.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000  --build-id  -T ./scripts/module-common.lds -o /root/simpleIDS/filters/binary/sandbox/syscall_hook/syscall_hook.ko /root/simpleIDS/filters/binary/sandbox/syscall_hook/syscall_hook.o /root/simpleIDS/filters/binary/sandbox/syscall_hook/syscall_hook.mod.o;  true

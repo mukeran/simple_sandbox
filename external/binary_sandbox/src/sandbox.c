@@ -41,7 +41,7 @@ void seg_fault () {
 
 int container_main(void *run_as) {
     signal(SIGSEGV, seg_fault);
-    printf("Container PID: %d\n", getpid());
+    // printf("Container PID: %d\n", getpid());
     /** Remount / to private mode (IMPORTANT) */
     if (mount("none", "/", NULL, MS_REC | MS_PRIVATE, NULL) != 0) {
         perror("Failed to remount / to private");
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
         container_execv_args[i] = malloc(sizeof(char) * (len + 1));
         memcpy(container_execv_args[i], argv[i + 1], sizeof(char) * (len + 1));
     }
-    printf("Parent PID: %d\n", getpid());
+    // printf("Parent PID: %d\n", getpid());
     if (access("./rootfs", F_OK) == 0)
         system("rm -rf ./rootfs");
     mkdir("./rootfs", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);

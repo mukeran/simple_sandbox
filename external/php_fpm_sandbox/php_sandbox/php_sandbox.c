@@ -23,6 +23,7 @@
 #define hook_function_count 7
 char *hook_function_names[] = {"system", "exec", "passthru", "shell_exec", "pcntl_exec", "popen", "mail"};
 zif_handler original_functions[hook_function_count];
+zif_handler original_cdef_function;
 
 void inform_detected(const char *info) {
     if (PG(auto_globals_jit)) {
@@ -160,6 +161,20 @@ PHP_FUNCTION(hooked_mail)
     }
 }
 
+PHP_FUNCTION(hooked_cdef)
+{
+    zval *args = NULL;
+	int argc = ZEND_NUM_ARGS();
+	ZEND_PARSE_PARAMETERS_START(1, -1)
+		Z_PARAM_VARIADIC('+', args, argc)
+	ZEND_PARSE_PARAMETERS_END();
+    char *func = Z_STRVAL(args[0]);
+    char buf[2048];
+    sprintf(buf, "FFI::cdef, func: %s", func);
+    inform_detected(buf);
+    RETURN_STRING("BLOCKED!")
+}
+
 zif_handler hook_functions[] = {zif_hooked_system, zif_hooked_exec, zif_hooked_passthru, zif_hooked_shell_exec, zif_hooked_pcntl_exec, zif_hooked_popen, zif_hooked_mail};
 
 /* {{{ PHP_RINIT_FUNCTION
@@ -192,6 +207,15 @@ PHP_MINIT_FUNCTION(php_sandbox)
         if (func) {
             original_functions[i] = func->handler;
             func->handler = hook_functions[i];
+        }
+    }
+    /** Hook FFI */
+    zend_class_entry *class = zend_hash_str_find_ptr(CG(class_table), "ffi", 3);
+    if (class) {
+        zend_internal_function *func = zend_hash_str_find_ptr(&(class->function_table), "cdef", 4);
+        if (func) {
+            original_cdef_function = func->handler;
+            func->handler = zif_hooked_cdef;
         }
     }
 	return SUCCESS;
