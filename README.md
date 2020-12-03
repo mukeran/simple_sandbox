@@ -1,2 +1,2 @@
-# simpleIDS
-A simple IDS based on network traffic.
+# simple_sandbox
+A simple sandbox with binary and php webshell support.
