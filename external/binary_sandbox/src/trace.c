@@ -119,7 +119,7 @@ void on_syscall(pid_t pid, int type) {
 
 void setup_trace() {
     ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-    kill(getpid(), SIGSTOP);
+    // kill(getpid(), SIGSTOP);
 }
 
 void trace_loop() {
@@ -164,17 +164,18 @@ void agent_loop(pid_t pid) {
         DIR *dir;
         struct dirent *ent;
         dir = opendir("/proc");
+        int cnt = 0;
         if (dir != NULL) {
             while (1) {
                 ent = readdir(dir);
                 if (ent == NULL)
                     break;
                 if (is_numeric(ent->d_name)) {
+                    ++cnt;
                     sprintf(buf, "/proc/%s/cmdline", ent->d_name);
                     FILE *fp = fopen(buf, "r");
                     fgets(buf, PATH_MAX - 1, fp);
                     fclose(fp);
-                    // printf("%s\n", buf);
                     if (strcmp(buf, "/bin/sh") == 0 || strcmp(buf, "/bin/bash") == 0 || strcmp(buf, "/bin/dash") == 0 || strcmp(buf, "/bin/zsh") == 0) {
                         printf("{\"type\": \"detected potential backdoor\", \"extra\": \"process cmdline %s\"}", buf);
                         kill(-1, SIGTERM);
@@ -185,6 +186,8 @@ void agent_loop(pid_t pid) {
             }
         }
         closedir(dir);
+        if (cnt <= 2)
+            break;
         usleep(1000 * 200);
     }
 }

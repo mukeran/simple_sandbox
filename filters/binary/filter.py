@@ -4,7 +4,7 @@ import re
 
 from filters.meta import BaseFilter
 from engines.meta import Engine
-from .sandbox import SECCOMPSandbox, ContainerSandbox
+from .sandbox import ContainerSandbox
 
 class BinaryFilter(BaseFilter):
   def __init__(self):
@@ -13,7 +13,7 @@ class BinaryFilter(BaseFilter):
       self.patterns = tmp["patterns"]
     for p in self.patterns:
       p['pattern'] = re.compile(p['pattern'].encode())
-    ContainerSandbox.start_container()
+    ContainerSandbox.init()
 
   def judge(self, type: Engine, data: dict):
     if type == Engine.HTTP:
@@ -28,7 +28,7 @@ class BinaryFilter(BaseFilter):
           self.report(body, 'body')
     else:
       path: str = data['path']
-      if SECCOMPSandbox.check(str):
-        self.report('<Reported by SECCOMP Sandbox>', path)
-      if ContainerSandbox.check(str):
-        self.report('<Reported by Container Sandbox>', path)
+      # TODO: Precheck
+      result = ContainerSandbox.check(path)
+      if result:
+        self.report(result, path)
