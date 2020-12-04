@@ -1,3 +1,4 @@
+from engines.meta import Engine
 import logging
 from decoder import FastCGI
 import threading
@@ -10,6 +11,7 @@ import docker
 import base64
 
 from decoder import FastCGIDecoder
+from filters import WebshellPrechecker
 
 PROXY_URL = 'http://127.0.0.1:9001'
 
@@ -35,6 +37,7 @@ class FPMSniffer:
     self.client = docker.from_env()
     self.image = self.client.images.build(path=os.path.join(os.getcwd(), 'external/php_fpm_sandbox'))
     logging.info('PHP-FPM sandbox image built. ID: {}'.format(self.image[0].id))
+    self.filter = WebshellPrechecker()
 
   def start(self):
     container = self.client.containers.run(self.image[0].id, ports={
@@ -69,12 +72,13 @@ class FPMSniffer:
         elif packet['type'] == FastCGI._fcgi_request_type.FCGI_STDIN:
           stdin += packet['content']
       if len(params) != 0:
-        r = requests.post(PROXY_URL, data={
-          'params': json.dumps(params),
-          'stdin': stdin
-        }, files={
-          'script': open(params['SCRIPT_FILENAME'], 'rb')
-        })
-        result = r.json()
-        if result['detected']:
-          logging.info('Detected PHP Execution in file {}, info: {}'.format(params['SCRIPT_FILENAME'], base64.b64decode(result['info'].encode())))
+        if not self.filter.judge(params['SCRIPT_FILENAME']):
+          r = requests.post(PROXY_URL, data={
+            'params': json.dumps(params),
+            'stdin': stdin
+          }, files={
+            'script': open(params['SCRIPT_FILENAME'], 'rb')
+          })
+          result = r.json()
+          if result['detected']:
+            logging.info('Detected PHP Execution in file {}, info: {}'.format(params['SCRIPT_FILENAME'], base64.b64decode(result['info'].encode())))

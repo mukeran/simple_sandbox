@@ -1,0 +1,12 @@
+is_stripped,is_static_link,has_malicious_import_function,size_of_code_segment,num_of_code_segment,has_symbol_main,num_CFG_nodes,num_CFG_edges,is_benign
+1,1,0,0,0,1,7,5,0
+1,1,0,0,0,1,19,21,0
+1,1,0,0,0,1,21,27,0
+1,1,0,0,0,1,18,20,0
+1,1,0,0,0,1,18,20,0
+1,1,0,0,0,1,12,16,0
+1,1,0,0,0,1,14,18,0
+1,1,0,0,0,1,16,18,0
+1,1,0,0,0,1,14,16,0
+1,0,0,17444,6,1,1364,2221,1
+0,0,0,535,6,1,57,66,1

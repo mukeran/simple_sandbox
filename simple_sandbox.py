@@ -1,11 +1,13 @@
 import logging
 import engines
 import filters, decoder
+import sys
 
 def start():
-  logging.basicConfig(level=logging.DEBUG)
+  # logging.basicConfig(level=logging.DEBUG)
   logging.info('Starting...')
-  watcher = engines.FileWatcher(['./test'])
+  paths = sys.argv[1:]
+  watcher = engines.FileWatcher(paths)
   watcher.register_filter(filters.BinaryFilter())
   fpm_sniffer = engines.FPMSniffer()
 
@@ -17,4 +19,8 @@ def start():
 
 
 if __name__ == '__main__':
+  logging.getLogger().setLevel(logging.DEBUG)
+  if len(sys.argv) <= 1:
+    logging.fatal('Please give at least a Binary listening path')
+    sys.exit(1)
   start()
