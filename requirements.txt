@@ -52,7 +52,6 @@ isort==5.6.4
 itanium-demangler==1.0
 itsdangerous==1.1.0
 Jinja2==2.11.2
-joblib==0.17.0
 jsonschema==3.2.0
 keyring==10.6.0
 keyrings.alt==3.0
@@ -67,11 +66,9 @@ MarkupSafe==1.0
 mulpyplexer==0.8
 netifaces==0.10.4
 networkx==2.5
-numpy==1.19.4
 oauth==1.0.1
 olefile==0.45.1
 packaging==20.4
-pandas==1.1.4
 paramiko==2.7.2
 pathtools==0.1.2
 pbr==5.5.1
@@ -106,7 +103,7 @@ PySMT==0.9.0
 PySocks==1.7.1
 pytest==6.1.2
 python-apt==1.6.5+ubuntu0.3
-python-dateutil==2.8.1
+python-dateutil==2.6.1
 python-debian==0.1.32
 python-dotenv==0.15.0
 python-ptrace==0.9.7
@@ -121,13 +118,10 @@ requests-unixsocket==0.1.5
 ROPGadget==6.3
 rpyc==4.1.5
 scapy==2.4.4
-scikit-learn==0.23.2
-scipy==1.5.4
 SecretStorage==2.3.1
 simplegeneric==0.8.1
 simplejson==3.13.2
 six==1.15.0
-sklearn==0.0
 smmap==3.0.4
 sortedcontainers==2.3.0
 ssh-import-id==5.7
@@ -136,13 +130,12 @@ systemd-python==234
 termcolor==1.1.0
 testresources==2.0.1
 texttable==1.6.3
-threadpoolctl==2.1.0
 toml==0.10.2
 traitlets==4.3.2
 ubuntu-drivers-common==0.0.0
 ufw==0.36
 unattended-upgrades==0.1
-unicorn==1.0.2rc4
+unicorn==1.0.2rc1
 urllib3==1.22
 usb-creator==0.3.3
 virtualenv==20.1.0
