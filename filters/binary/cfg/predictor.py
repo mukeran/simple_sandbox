@@ -13,7 +13,8 @@ class Predictor:
     self.model = joblib.load(model_path)
 
   def is_malicious(self, file_path):
-    # return True
+    if os.path.getsize(file_path) > 10 * 1024:
+      return True
     if not os.path.exists(file_path):
       raise FileNotFoundError
     features = myfe.check_file(file_path)

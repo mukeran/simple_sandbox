@@ -106,14 +106,14 @@ void on_syscall(pid_t pid, int type) {
             printf("Syscall open pathname: %s, flags: %lu, mode: %lu\n", pathname, flags, mode);
 
             /* check for open passwd */
-            if (strcmp(pathname, "/etc/passwd") == 0) {
-                printf("{\"type\": \"detected access to /etc/passwd\", \"extra\": \"open %s\"}", pathname);
-                regs.orig_rax = -1;
-                set_registers(pid, &regs);
-                kill(-pid, SIGTERM);
-                kill(-pid, SIGKILL);
-                exit(10);
-            }
+            // if (strcmp(pathname, "/etc/passwd") == 0) {
+            //     printf("{\"type\": \"detected access to /etc/passwd\", \"extra\": \"open %s\"}", pathname);
+            //     regs.orig_rax = -1;
+            //     set_registers(pid, &regs);
+            //     kill(-pid, SIGTERM);
+            //     kill(-pid, SIGKILL);
+            //     exit(10);
+            // }
             /* check for access crontab */
             if (strcmp(pathname, "/etc/crontab") == 0) {
                 printf("{\"type\": \"detected access to /etc/crontab\", \"extra\": \"open %s\"}", pathname);
@@ -145,14 +145,14 @@ void on_syscall(pid_t pid, int type) {
             putchar('\n');
 
             /* check for open passwd */
-            if (strcmp(pathname, "/etc/passwd") == 0) {
-                printf("{\"type\": \"detected access to /etc/passwd\", \"extra\": \"openat %s\"}", pathname);
-                regs.orig_rax = -1;
-                set_registers(pid, &regs);
-                kill(-pid, SIGTERM);
-                kill(-pid, SIGKILL);
-                exit(10);
-            }
+            // if (strcmp(pathname, "/etc/passwd") == 0) {
+            //     printf("{\"type\": \"detected access to /etc/passwd\", \"extra\": \"openat %s\"}", pathname);
+            //     regs.orig_rax = -1;
+            //     set_registers(pid, &regs);
+            //     kill(-pid, SIGTERM);
+            //     kill(-pid, SIGKILL);
+            //     exit(10);
+            // }
             /* check for access crontab */
             if (strcmp(pathname, "/etc/crontab") == 0) {
                 printf("{\"type\": \"detected access to /etc/crontab\", \"extra\": \"openat %s\"}", pathname);
@@ -232,9 +232,9 @@ static char* agent_file_check(DIR* dir, char* pid) {
             target = read_link_path(buf);
             // printf("%s -> %s\n", buf, target);
             /* check for open passwd */
-            if (strcmp(target, "/etc/passwd") == 0) {
-                return target;
-            }
+            // if (strcmp(target, "/etc/passwd") == 0) {
+            //     return target;
+            // }
             /* check for access crontab */
             if (strcmp(target, "/etc/crontab") == 0) {
                 return target;

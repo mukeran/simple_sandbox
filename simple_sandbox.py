@@ -1,6 +1,6 @@
 import logging
 import engines
-import filters, decoder
+import filters
 import sys
 
 def start():
