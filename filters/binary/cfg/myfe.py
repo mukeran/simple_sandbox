@@ -84,8 +84,8 @@ if __name__ == '__main__':
 
   for root, dirs, files in os.walk('./malicious'):
     for file in files:
-      if 'meterpreter' in file:
-        continue
+      # if 'meterpreter' in file:
+      #   continue
       path = os.path.join(root, file)
       print(path)
 

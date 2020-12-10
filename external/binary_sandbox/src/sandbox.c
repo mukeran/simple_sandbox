@@ -39,10 +39,11 @@ void seg_fault () {
     exit(10);
 }
 
+/** Container main entrance */
 int container_main(void *run_as) {
     signal(SIGSEGV, seg_fault);
     // printf("Container PID: %d\n", getpid());
-    /** Remount / to private mode (IMPORTANT) */
+    /** Remount / to private mode (这么做的原因是部分 Linux 发行版将命名空间的 mount 模式设置为了 shared，导致挂载无法隔离) */
     if (mount("none", "/", NULL, MS_REC | MS_PRIVATE, NULL) != 0) {
         perror("Failed to remount / to private");
     }
@@ -142,6 +143,7 @@ void terminate_sandbox(int sig) {
     exit(-3);
 }
 
+/** Sandbox executable entrance */
 int main(int argc, char *argv[]) {
     if (argc <= 1) {
         fprintf(stderr, "Please give a program and its argument");

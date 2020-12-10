@@ -1,3 +1,7 @@
+'''
+文件已废弃
+'''
+
 import urllib.parse
 import base64
 import abc

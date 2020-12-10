@@ -9,5 +9,6 @@ Docker, PHP, Python3
 ```sh
 pip3 install -r requirements.txt
 
+cd external/php_fpm_sandbox/php_sandbox && phpize
 cd external/binary_sandbox && make
 ```

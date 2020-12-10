@@ -1,6 +1,7 @@
 from enum import IntEnum
 
 class _fcgi_request_type(IntEnum):
+  '''FastCGI 请求类型'''
   FCGI_BEGIN_REQUEST = 1
   FCGI_ABORT_REQUEST = 2
   FCGI_END_REQUEST = 3
@@ -13,8 +14,10 @@ class _fcgi_request_type(IntEnum):
   FCGI_GET_VALUES_RESULT = 10
 
 class FastCGIDecoder:
+  '''FastCGI 解码器'''
   @staticmethod
   def __decodeHeader(raw):
+    '''解码 FastCGI 包头部'''
     header = dict()
     header['version'] = raw[0]
     header['type'] = raw[1]
@@ -24,7 +27,9 @@ class FastCGIDecoder:
     header['reserved'] = raw[7]
     return header
   
+  @staticmethod
   def __decodeParams(raw):
+    '''解码 FastCGI 包参数'''
     params = {}
     while len(raw) != 0:
       keyLength = raw[0]
@@ -48,6 +53,7 @@ class FastCGIDecoder:
 
   @staticmethod
   def decode(raw):
+    '''解码 FastCGI 包'''
     packets = []
     while len(raw) != 0:
       packet = FastCGIDecoder.__decodeHeader(raw)

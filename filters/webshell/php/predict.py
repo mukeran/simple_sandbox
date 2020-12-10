@@ -10,6 +10,7 @@ class Predictor:
     self.model = joblib.load(model_path)
 
   def predict(self, file_path):
+    '''提取 PHP 脚本特征并使用模型预测是否需要使用沙箱检测'''
     if not os.path.exists(file_path):
       raise FileNotFoundError
     features = control_flow.extract_control_flow(file_path)

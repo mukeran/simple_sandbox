@@ -17,10 +17,10 @@ class ContainerSandbox:
   @staticmethod
   def check(binary_path: str):
     tmpdir = tempfile.TemporaryDirectory(prefix='sandbox_')
-    temp_stdout = tempfile.TemporaryFile()
+    temp_stdout = tempfile.TemporaryFile() # 使用临时文件保存沙箱执行 stdout 和 stderr
     temp_stderr = tempfile.TemporaryFile()
     logging.debug('Sandbox temp dir: {}'.format(tmpdir.name))
-    p = subprocess.Popen([os.path.join(os.getcwd(), 'external/binary_sandbox/sandbox'), binary_path], stdout=temp_stdout, stderr=temp_stderr, cwd=tmpdir.name)
+    p = subprocess.Popen([os.path.join(os.getcwd(), 'external/binary_sandbox/sandbox'), binary_path], stdout=temp_stdout, stderr=temp_stderr, cwd=tmpdir.name) # 外部调用沙箱二进制文件进行检测
     p.wait()
     tmpdir.cleanup()
     temp_stderr.seek(0)
@@ -34,7 +34,7 @@ class ContainerSandbox:
     temp_stdout.close()
     logging.debug('Sandbox stdout: {}'.format(out))
     try:
-      result = json.loads(out[-1])
+      result = json.loads(out[-1]) # 读取最后一行的 JSON 格式结果
     except Exception as e:
       return False
     return 'Type: {}; Extra: {}'.format(result['type'], result['extra'])

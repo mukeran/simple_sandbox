@@ -14,7 +14,7 @@
 #include "dependency.h"
 
 const int root_directories_length = 16;
-char *root_directories[] = {
+const char *root_directories[] = {
     "bin", "dev", "etc", "home", "lib", "lib64", "mnt", "opt", "proc", "root", "run", "sbin", "sys", "tmp", "usr", "var"
 };
 
@@ -34,6 +34,7 @@ const char **copy_binaries_list[] = {
     extra_list
 };
 
+/** Copy path_bin's dependencies to root */
 void copy_dependencies(const char *root, const char *path_bin) {
     char content[128], *dependencies[128], path[PATH_MAX];
     if (get_section(content, path_bin, ".interp") != 0)
@@ -60,6 +61,7 @@ void copy_dependencies(const char *root, const char *path_bin) {
     }
 }
 
+/** Make fake root */
 int mkroot(const char *root) {
     char path[PATH_MAX], path_bin[PATH_MAX];
     if (is_directory_empty(root) != 0) {

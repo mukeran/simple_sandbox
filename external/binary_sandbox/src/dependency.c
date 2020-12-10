@@ -20,6 +20,7 @@ int is_elf_file(const char *filename) {
     return memcmp(buf, ELFMAG, 4) == 0;
 }
 
+/** Get ELF file section */
 int get_section(char *dst, const char *filename, const char *section_name) {
     Elf64_Ehdr elf_header;
     Elf64_Shdr *sh_table;
@@ -49,6 +50,7 @@ int get_section(char *dst, const char *filename, const char *section_name) {
     return -1;
 }
 
+/** Look for dynamic linked ELF file dependencies using ld-linux */
 int get_dependencies(char **dst, const char *filename) {
     char cmd[PATH_MAX + 50];
     sprintf(cmd, "LD_TRACE_LOADED_OBJECTS=1 %s", filename);

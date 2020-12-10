@@ -25,10 +25,13 @@ char *hook_function_names[] = {"system", "exec", "passthru", "shell_exec", "pcnt
 zif_handler original_functions[hook_function_count];
 zif_handler original_cdef_function;
 
+/** Inform proxy that this request's script is a backdoor */
 void inform_detected(const char *info) {
+    /** Make sure that $_SERVER is initialized */
     if (PG(auto_globals_jit)) {
         zend_is_auto_global_str(ZEND_STRL("_SERVER"));
     }
+    /** Get request_id */
     zval *_server = zend_hash_str_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER") - 1);
     zval *_request_id = zend_hash_str_find(Z_ARRVAL_P(_server), "REQUEST_ID", sizeof("REQUEST_ID") - 1);
     if (_request_id == NULL)
@@ -38,7 +41,7 @@ void inform_detected(const char *info) {
     char *listen_port_env = getenv("PROXY_LISTEN_PORT");
     if (listen_port_env != NULL)
         sscanf(listen_port_env, "%d", &listen_port);
-
+    /** Send HTTP request to proxy */
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));

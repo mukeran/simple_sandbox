@@ -26,6 +26,7 @@ info = {}
 
 @app.route('/', methods=['post'])
 def new_execution():
+  '''Start a new testing execution'''
   request_id = ''.join(random.sample(string.ascii_letters, 6))
   params = json.loads(request.form['params'])
   script = request.files['script']
@@ -47,6 +48,7 @@ def new_execution():
 
 @app.route('/<request_id>', methods=['get'])
 def detected(request_id):
+  '''Inform detected by php_sandbox extension'''
   results[request_id] = status.DETECTED
   info[request_id] = request.args.get('info')
   return jsonify({ 'success': True })
@@ -64,6 +66,7 @@ class _fcgi_request_type(IntEnum):
   FCGI_GET_VALUES_RESULT = 10
 
 def generate_fpm_packet(request_id, type, params = None, version = 1):
+  '''Generate FastCGI packet'''
   content = b''
   if type == _fcgi_request_type.FCGI_BEGIN_REQUEST:
     content = b'\x00\x01\x00\x00\x00\x00\x00\x00'
@@ -106,6 +109,7 @@ def parse_header(raw):
   return type, contentLength, paddingLength
 
 def get_response(sock):
+  '''Wait for PHP-FPM response'''
   header_raw = sock.recv(8)
   if header_raw == None:
     return None, None
@@ -118,6 +122,7 @@ def get_response(sock):
   return type, content
 
 def execute(params, stdin):
+  '''Build and send FastCGI protocol packet to PHP-FPM service'''
   sock = socket(AF_INET, SOCK_STREAM)
   sock.connect(('127.0.0.1', 9000))
   sock.send(generate_fpm_packet(1, _fcgi_request_type.FCGI_BEGIN_REQUEST))

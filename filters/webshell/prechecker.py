@@ -1,13 +1,12 @@
 import logging
-import os
 
 from filters.meta import BaseFilter
-from engines.meta import Engine
 from .php.predict import Predictor
 
 class WebshellPrechecker(BaseFilter):
+  '''Webshell(PHP) 脚本机器学习预检测'''
   def __init__(self):
-      self.predictor = Predictor('./filters/webshell/php/model/model.joblib')
+    self.predictor = Predictor('./filters/webshell/php/model/model.joblib')
 
   def judge(self, path: str):
     logging.info('Prechecking PHP script file {} with model'.format(path))

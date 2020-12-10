@@ -72,6 +72,7 @@ int copy_file(char *from, char *to) {
     return 0;
 }
 
+/** Trim string spaces and newlines */
 int trim(char *str) {
     int len = strlen(str);
     char *head = str;
@@ -87,6 +88,7 @@ int trim(char *str) {
     return i;
 }
 
+/** Recurisively make directory 递归地建立文件夹 */
 void mkdir_recursively(const char *dir, mode_t mode) {
     if (access(dir, F_OK) == 0) return;
     char *dup_dir = strdup(dir);
@@ -104,6 +106,7 @@ void mkdir_recursively(const char *dir, mode_t mode) {
     }
 }
 
+/** Check if str is a number */
 int is_numeric(const char *str) {
     int len = strlen(str);
     for (int i = 0; i < len; ++i) {
@@ -113,12 +116,14 @@ int is_numeric(const char *str) {
     return 1;
 }
 
+/** Check if string b starts with a */
 int starts_with(const char *a, const char *b)
 {
    if(strncmp(a, b, strlen(b)) == 0) return 1;
    return 0;
 }
 
+/** Get proc fd link original path */
 char* read_link_path(const char* path)
 {
     struct stat sb;

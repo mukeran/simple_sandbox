@@ -5,6 +5,7 @@ from control_flow import extract_control_flow
 
 
 class Extractor:
+  '''批量特征提取器'''
   HEADER = ['loop', 'command_execution', 'eval', 'get_post_request', 'encryption', 'hash',
             'long_length_variable_name', 'condition', 'long_length_string', 'dynamic_function_call',
             'binary_op_between_string', 'dynamic_variable_name', 'is_benign']

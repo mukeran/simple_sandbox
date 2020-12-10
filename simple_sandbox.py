@@ -6,9 +6,11 @@ import sys
 def start():
   # logging.basicConfig(level=logging.DEBUG)
   logging.info('Starting...')
+  # 启动 FileWatcher
   paths = sys.argv[1:]
   watcher = engines.FileWatcher(paths)
   watcher.register_filter(filters.BinaryFilter())
+  # 启动 FPMSniffer
   fpm_sniffer = engines.FPMSniffer()
 
   watcher.start()

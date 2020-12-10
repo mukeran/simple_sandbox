@@ -10,6 +10,7 @@ def merge_info(a: dict, b: dict):
   return a
 
 def parse_node(node):
+  '''递归提取特征'''
   info = { 'loop': 0, 'command_execution': 0, 'eval': 0, 'get_post_request': 0, 'encryption': 0, 'hash': 0, 'long_length_variable_name': 0, 'condition': 0, 'long_length_string': 0, 'dynamic_function_call': 0, 'binary_op_between_string': 0, 'dynamic_variable_name': 0 }
   if type(node) == list:
     for elem in node:
@@ -57,10 +58,11 @@ def parse_node(node):
     
 
 def extract_control_flow(code):
+  '''PHP 脚本 AST 特征提取'''
   tmp_file = tempfile.TemporaryFile()
   cwd = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'vendor/nikic/php-parser/bin')
   print(code)
-  p = subprocess.Popen(['./php-parse', '-j', code], cwd=cwd, shell=False, stdout=tmp_file, stderr=subprocess.PIPE)
+  p = subprocess.Popen(['./php-parse', '-j', code], cwd=cwd, shell=False, stdout=tmp_file, stderr=subprocess.PIPE) # 外部调用 php-parse
   p.wait()
   tmp_file.seek(0)
   content = tmp_file.read()

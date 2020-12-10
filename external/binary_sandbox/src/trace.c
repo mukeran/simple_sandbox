@@ -35,6 +35,7 @@ void set_registers(pid_t ch, struct user_regs_struct *regs) {
     ptrace(PTRACE_SETREGS, ch, NULL, regs);
 }
 
+/** Mapping registers to syscall params */
 void parse_syscall_params(const struct user_regs_struct *regs, struct syscall_info *out) {
     out->id   = regs->orig_rax;
     out->arg1 = regs->rdi;
@@ -45,6 +46,7 @@ void parse_syscall_params(const struct user_regs_struct *regs, struct syscall_in
     out->arg6 = regs->r9;
 }
 
+/** Get process memory using Linux proc filesystem */
 char *get_mem_str(pid_t pid, uint64_t addr) {
     char buf[PATH_MAX];
     sprintf(buf, "/proc/%d/mem", pid);
@@ -67,6 +69,7 @@ char *get_mem_str(pid_t pid, uint64_t addr) {
     return p;
 }
 
+/** Check syscall and its argument */
 void on_syscall(pid_t pid, int type) {
     struct user_regs_struct regs;
     struct syscall_info info;
@@ -144,7 +147,7 @@ void on_syscall(pid_t pid, int type) {
                 printf(", fd is cwd");
             putchar('\n');
 
-            /* check for open passwd */
+            /* Check for open passwd */
             // if (strcmp(pathname, "/etc/passwd") == 0) {
             //     printf("{\"type\": \"detected access to /etc/passwd\", \"extra\": \"openat %s\"}", pathname);
             //     regs.orig_rax = -1;
@@ -153,7 +156,7 @@ void on_syscall(pid_t pid, int type) {
             //     kill(-pid, SIGKILL);
             //     exit(10);
             // }
-            /* check for access crontab */
+            /* Check for access crontab */
             if (strcmp(pathname, "/etc/crontab") == 0) {
                 printf("{\"type\": \"detected access to /etc/crontab\", \"extra\": \"openat %s\"}", pathname);
                 regs.orig_rax = -1;
@@ -177,14 +180,16 @@ void on_syscall(pid_t pid, int type) {
     }
 }
 
+/** Set ptrace traceme */
 void setup_trace() {
     ptrace(PTRACE_TRACEME, 0, NULL, NULL);
     // kill(getpid(), SIGSTOP);
 }
 
+/** Use ptrace to trace syscall */
 void trace_loop() {
-    int insyscall = 0;
-    int options_enabled = 0;
+    int insyscall = 0; // 表示当前是进入还是退出 syscall
+    int options_enabled = 0; // 标识是否开启 PTRACE_O_TRACESYSGOOD，开启时获取到的 stopsig 为 SIGTRAP | 0x80，表示是 syscall 造成的 stop
     while (1) {
         int status;
         pid_t child = waitpid((pid_t)(-1), &status, __WALL);
@@ -193,21 +198,17 @@ void trace_loop() {
             break;
         }
         int stopsig = WSTOPSIG(status);
-        int siginfo_queried = 0;
         siginfo_t sig;
 
         int syscallstop = 0;
-        if (options_enabled && stopsig == (SIGTRAP | 0x80))
+        if (options_enabled && stopsig == (SIGTRAP | 0x80)) // PTRACE_O_TRACESYSGOOD 开启时，syscall stop 对应信号为 SIGTRAP | 0x80
             syscallstop = 1;
-        if (!options_enabled && stopsig == (SIGTRAP)) {
-            if (!siginfo_queried) {
-                siginfo_queried = 1;
-                ptrace(PTRACE_GETSIGINFO, child, 0, &sig);
-            }
+        if (!options_enabled && stopsig == (SIGTRAP)) { // 未开始上述选项时，信号为 SIGTRAP
+            ptrace(PTRACE_GETSIGINFO, child, 0, &sig);
             syscallstop = (sig.si_code == SIGTRAP || sig.si_code == (SIGTRAP | 0x80));
         }
         if (syscallstop) {
-            on_syscall(child, insyscall), insyscall = !insyscall;
+            on_syscall(child, insyscall), insyscall = !insyscall; // 处理 syscall
             if (!options_enabled) {
                 ptrace(PTRACE_SETOPTIONS, child, NULL,
                     PTRACE_O_TRACEEXEC | PTRACE_O_TRACEEXIT | PTRACE_O_TRACEFORK | PTRACE_O_TRACEVFORK | PTRACE_O_TRACECLONE | PTRACE_O_TRACESYSGOOD | PTRACE_O_EXITKILL);
@@ -218,6 +219,7 @@ void trace_loop() {
     }
 }
 
+/** Check process fds */
 static char* agent_file_check(DIR* dir, char* pid) {
     struct dirent *ent;
     char buf[PATH_MAX];
@@ -248,6 +250,7 @@ static char* agent_file_check(DIR* dir, char* pid) {
     return NULL;
 }
 
+/** Observe process behavior to assist tracing */
 void agent_loop(pid_t pid) {
     char buf[PATH_MAX];
     while (1) {
@@ -260,8 +263,9 @@ void agent_loop(pid_t pid) {
                 ent = readdir(dir);
                 if (ent == NULL)
                     break;
-                if (is_numeric(ent->d_name)) {
+                if (is_numeric(ent->d_name)) { // 如果是数字，则是进程目录
                     proc_count++;
+                    /* Check suspicious launching cmdline */
                     sprintf(buf, "/proc/%s/cmdline", ent->d_name);
                     FILE *fp = fopen(buf, "r");
                     fgets(buf, PATH_MAX - 1, fp);
@@ -273,7 +277,7 @@ void agent_loop(pid_t pid) {
                         exit(10);
                     }
 
-                    /* check for suspicious file opens */
+                    /* Check suspicious file opens */
                     sprintf(buf, "/proc/%s/fd", ent->d_name);
                     DIR *dir_fd = opendir(buf);
                     if (dir_fd != NULL) {
