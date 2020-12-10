@@ -105,7 +105,6 @@ pyserial==3.5
 PySMT==0.9.0
 PySocks==1.7.1
 pytest==6.1.2
-python-apt==1.6.5+ubuntu0.3
 python-dateutil==2.8.1
 python-debian==0.1.32
 python-dotenv==0.15.0
